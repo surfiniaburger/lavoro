@@ -1,6 +1,11 @@
-name = "cloudflare-ai-example"
+name = "lavoro"
 main = "src/index.js"
 compatibility_date = "2023-09-18"
 
 [ai]
 binding = "AI"
+
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "scholar"
+database_id = "679b8967-9016-43c4-b14d-0d3c01e26840"

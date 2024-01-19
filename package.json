@@ -1,16 +1,21 @@
 {
-  "name": "ai-example",
+  "name": "lavoro",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
+
   "scripts": {
     "deploy": "npx wrangler deploy",
-    "start": "npx wrangler dev"
+    "start": "npx wrangler dev",
+    "try": "node src/try.js"
   },
   "devDependencies": {
     "wrangler": "^3.19.0"
   },
   "dependencies": {
     "@cloudflare/ai": "^1.0.6",
+    "@jridgewell/sourcemap-codec": "^1.4.15",
+    "@rollup/plugin-inject": "^5.0.5",
     "hono": "^3.7.0"
   }
 }
