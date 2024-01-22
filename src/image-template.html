@@ -135,6 +135,7 @@
             <a id="downloadLink" download="generated_image.png">
               <i class="fas fa-download"></i> Download Image
             </a>
+
           </div>
     
         <!-- Add the form for user input -->
@@ -161,6 +162,7 @@
 
     console.log("Prompt:", prompt); // Log the prompt for debugging
 
+    try{
     // Fetch the image from the server
     const response = await fetch(`/generate-image?prompt=${encodeURIComponent(prompt)}`, {
       method: "GET",
@@ -176,16 +178,46 @@
       const imageElement = document.getElementById('generatedImage');
       imageElement.src = imageUrl;
       imageElement.style.display = 'block'; // Show the image
-       
+
         // Display the download section
       document.getElementById('download-section').style.display = 'block';
       // Hide loading state if needed
-      
+
+      // Now, initiate the PUT operation to the Cloudflare Worker endpoint to store the image in the R2 bucket
+      await uploadImageToBucket(prompt);
+
     } else {
       // Handle errors if necessary
       console.error("Failed to fetch the generated image:", await response.text());
     }
-  };
+  } catch (error) {
+    console.error("An error occurred while fetching the generated image:", error);
+    // Hide loading state in case of an error
+    document.getElementById("loading-state").style.display = "none";
+  }
+};
+
+  // Function to initiate the PUT operation to store the image in the R2 bucket using Cloudflare Worker
+const uploadImageToBucket = async (prompt) => {
+  try {
+    // Make a PUT request to the Cloudflare Worker endpoint responsible for storing the image in the R2 bucket
+    const putResponse = await fetch('/upload-image', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (putResponse.ok) {
+      alert('Image successfully uploaded to R2 bucket!');
+    } else {
+      alert('Failed to upload image to R2 bucket:', await putResponse.text());
+    }
+  } catch (error) {
+    console.error('An error occurred while uploading image to R2 bucket:', error);
+  }
+};
 
   // Function to handle form submission
   const submitForm = async (event) => {

@@ -78,6 +78,7 @@ app.post("/", async (c) => {
 // New route for AI image generation
 app.get("/generate-image", async (c) => {
   const ai = new Ai(c.env.AI);
+  
 
   // Retrieve the prompt from the query parameters
   const prompt = c.req.query("prompt") || 'cyberpunk cat';
@@ -105,6 +106,37 @@ app.get("/generate-image", async (c) => {
   return c.text('Error generating image');
 }
 });
+
+
+// Cloudflare Worker functionality for PUT operation
+app.put("/upload-image", async (c) => {
+  const env = c.env; // Assuming env contains MY_BUCKET
+
+  // Extract prompt from the request body
+  const body = await c.req.json();
+  const prompt = body.prompt;
+
+  // Generate a unique key based on the prompt (you may need to customize this)
+  const key = prompt.replace(/\s+/g, '_').toLowerCase();
+
+  // Get the image data from the AI based on the prompt
+  const ai = new Ai(env.AI);
+  const inputs = { prompt };
+
+  try {
+    const response = await ai.run('@cf/stabilityai/stable-diffusion-xl-base-1.0', inputs);
+
+    // Upload the image data to the bucket
+    await env.MY_BUCKET.put(key, response);
+
+    // Return a success response
+    return c.text(`Image uploaded successfully with key: ${key}`);
+  } catch (error) {
+    console.error('Error generating or uploading image:', error);
+    return c.text('Error generating or uploading image');
+  }
+});
+
 
 
 // Function to retrieve the last query and its result from the database
