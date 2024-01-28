@@ -1,8 +1,6 @@
 import { Ai } from "@cloudflare/ai";
 import { Hono } from "hono";
 
-const NAME = "LavoroABTest";
-
 import template from "./template.html";
 import streamingTemplate from "./template-streaming.html";
 import imageTemplate from "./image-template.html";
@@ -23,6 +21,29 @@ async function saveResultToDatabase(database, query, result) {
     INSERT INTO query_results (query, result) VALUES (?, ?);
   `).bind(query, result).run();
 }
+
+async function performSentimentAnalysis(text, ai) {
+  const sentimentInputs = {
+    text,
+  };
+
+  const sentimentResponse = await ai.run(
+    '@cf/huggingface/distilbert-sst-2-int8',
+    sentimentInputs
+  );
+
+  return sentimentResponse[1]; // Assuming the model returns a single sentiment result
+}
+
+function formatSentiment(sentimentResult) {
+  if (!sentimentResult || !sentimentResult.label || !sentimentResult.score) {
+    return "Sentiment: N/A";
+  }
+
+  const sentimentText = `Sentiment: ${sentimentResult.label}, Score: ${sentimentResult.score}`;
+  return sentimentText;
+}
+
 
 app.get("/stream", async (c) => {
   const ai = new Ai(c.env.AI);
@@ -69,8 +90,14 @@ app.post("/", async (c) => {
     },
   );
 
+   // Perform sentiment analysis on the user's input
+   const sentimentResult = await performSentimentAnalysis(question, ai);
+
+   // Format sentiment result as text
+  const sentimentText = formatSentiment(sentimentResult);
+
   // Use the database to save the AI response
-  await saveResultToDatabase(database, question, answer);
+  await saveResultToDatabase(database, question, answer + sentimentText);
   return c.text(answer);
 });
 
@@ -78,7 +105,7 @@ app.post("/", async (c) => {
 // New route for AI image generation
 app.get("/generate-image", async (c) => {
   const ai = new Ai(c.env.AI);
-  
+
 
   // Retrieve the prompt from the query parameters
   const prompt = c.req.query("prompt") || 'cyberpunk cat';
