@@ -4,14 +4,16 @@ import { Hono } from "hono";
 import template from "./template.html";
 import streamingTemplate from "./template-streaming.html";
 import imageTemplate from "./image-template.html";
-
+import imgGen from "./img-class.html";
+import imgClass from "./class-template.html";
 
 const app = new Hono();
 
 app.get("/", (c) => c.html(streamingTemplate));
 app.get("/b", (c) => c.html(template));
 app.get("/c", (c) => c.html(imageTemplate));
-
+app.get("/d", (c) => c.html(imgGen));
+app.get("/e", (c) => c.html(imgClass));
 
 
 // Function to save AI results to the database
@@ -102,38 +104,73 @@ app.post("/", async (c) => {
 });
 
 
-// New route for AI image generation
-app.get("/generate-image", async (c) => {
-  const ai = new Ai(c.env.AI);
-
-
-  // Retrieve the prompt from the query parameters
-  const prompt = c.req.query("prompt") || 'cyberpunk cat';
-
-  // Customize the prompt for image generation
+// Common function for image generation
+async function generateImage(ai, prompt) {
   const inputs = {
     prompt,
   };
 
-   try{
-  // Run AI to generate an image
-  const response = await ai.run(
-    '@cf/stabilityai/stable-diffusion-xl-base-1.0',
-    inputs
-  );
+  try {
+    const response = await ai.run(
+      '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+      inputs
+    );
 
-  // Return the image response
-  return new Response(response, {
-    headers: {
-      'content-type': 'image/png',
-    },
-  });
-} catch (error) {
-  console.error('Error generating image:', error);
-  return c.text('Error generating image');
+    return new Response(response, {
+      headers: {
+        'content-type': 'image/png',
+      },
+    });
+  } catch (error) {
+    console.error('Error generating image:', error);
+    return new Response(JSON.stringify({ error: 'Error generating image' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+  }
 }
+
+// Route for image generation only
+app.get("/generate-image", async (c) => {
+  const ai = new Ai(c.env.AI);
+  const prompt = c.req.query("prompt") || 'cyberpunk cat';
+
+  return await generateImage(ai, prompt);
 });
 
+// Function to process image using Cloudflare AI
+async function processImage(ai, imageBuffer) {
+  const inputs = {
+    image: [...new Uint8Array(imageBuffer)],
+  };
+
+  const response = await ai.run('@cf/microsoft/resnet-50', inputs);
+  return response;
+}
+
+// Route for processing uploaded images
+app.post("/upload-and-classify", async (c) => {
+  const ai = new Ai(c.env.AI);
+
+  try {
+    const formData = await c.req.formData();
+    const imageFile = formData.get("image");
+
+    if (!imageFile) {
+      return c.json({ error: "No image uploaded" });
+    }
+
+    const imageBuffer = await imageFile.arrayBuffer();
+    const imageProcessingResult = await processImage(ai, imageBuffer);
+
+    return c.json({ imageProcessingResult });
+  } catch (error) {
+    console.error('Error processing uploaded image:', error);
+    return c.json({ error: 'Error processing uploaded image' });
+  }
+});
 
 // Cloudflare Worker functionality for PUT operation
 app.put("/upload-image", async (c) => {

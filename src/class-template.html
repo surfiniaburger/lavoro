@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload and Classify</title>
+</head>
+<body>
+
+<form id="upload-form" enctype="multipart/form-data">
+  <input type="file" name="image" accept="image/*" required>
+  <button type="button" onclick="uploadAndClassify()">Upload and Classify</button>
+</form>
+
+<div id="result-container"></div>
+
+<script>
+  async function uploadAndClassify() {
+    const form = document.getElementById('upload-form');
+    const resultContainer = document.getElementById('result-container');
+
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch('/upload-and-classify', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        resultContainer.innerHTML = `<p>Classification Result:</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } else {
+        resultContainer.innerHTML = `<p>Error: ${data.error}</p>`;
+      }
+    } catch (error) {
+      console.error('Error during upload and classification:', error);
+      resultContainer.innerHTML = `<p>Error during upload and classification</p>`;
+    }
+  }
+</script>
+
+</body>
+</html>
+
