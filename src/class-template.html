@@ -4,16 +4,87 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload and Classify</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f9fa; /* Light gray background */
+      margin: 0;
+      padding: 0;
+    }
+
+    #content {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #ffffff; /* White content background */
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Light gray shadow */
+    }
+
+    #header {
+      background-color: #007bff; /* Primary blue header background */
+      color: #ffffff; /* White text */
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #upload-form {
+      margin-top: 20px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ced4da; /* Light gray border */
+      border-radius: 4px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff; /* Primary blue button background */
+      color: #ffffff; /* White text */
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3; /* Darker blue on hover */
+    }
+
+    #result-container {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
+    <div id="content">
+        <div id="header">
+          <h1>Upload and Classify</h1>
+          <p><a href="/"><i class="fas fa-play-circle"></i>(Streaming)</a></p>
+          <p><a href="/b"><i class="fas fa-ban"></i>(Blocking)</a></p>
+          <p><a href="/c"><i class="fas fa-image"></i>(Image Generation)</a></p>
+          <p><a href="/d"><i class="fas fa-microphone"></i>(Speech to Text)</a></p>
+        </div>
+
 <form id="upload-form" enctype="multipart/form-data">
   <input type="file" name="image" accept="image/*" required>
-  <button type="button" onclick="uploadAndClassify()">Upload and Classify</button>
+  <button type="button" onclick="uploadAndClassify()">Classify</button>
 </form>
 
 <div id="result-container"></div>
-
+</div>
 <script>
   async function uploadAndClassify() {
     const form = document.getElementById('upload-form');
