@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lavoro - Audio to Text</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #0e0e0e;
+      margin: 0;
+      padding: 0;
+    }
+
+    #content {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #1a1a1a;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(250, 249, 249, 0.1);
+    }
+
+    #header {
+      background-color: #3498db;
+      color: #0c0808;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #query-form {
+    margin-top: 20px;
+  }
+
+  input[type="text"] {
+    width: 82%;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  button {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: #0a0909;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #2980b9;
+  }
+
+
+    #loading-state {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      color: #3498db;
+    }
+    #response img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: none; /* Initially hide the image */
+    }
+
+    /* Animated spinner style */
+    .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    
+#download-section {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.download-link {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.download-link:hover {
+  background-color: #2980b9;
+}
+  </style>
+
+</head>
+<body>
+  <div id="content">
+    <div id="header">
+      <h1>Lavoro - Speech to Text</h1>
+      <p><a href="/"><i class="fas fa-play-circle"></i>(Streaming)</a></p>
+      <p><a href="/b"><i class="fas fa-ban"></i>(Blocking)</a></p>
+      <p><a href="/c"><i class="fas fa-image"></i>(Image Generation)</a></p>
+      <p><a href="/e"><i class="fas fa-image"></i>(Image Classification)</a></p>
+    </div>
+
+    <!-- Add loading state if needed -->
+    <div id="loading-state">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Display the response (text result) -->
+    <div id="response">
+      <div id="textResult" style="display: none;"></div>
+    </div>
+
+    <!-- Add the form for audio input -->
+    <form id="audio-form">
+      <label for="audioInput">Upload Audio File:</label>
+      <input
+        type="file"
+        id="audioInput"
+        accept=".wav, .mp3"
+        required
+      />
+      <button type="submit">Convert to Text <i class="fas fa-volume-up"></i></button>
+    </form>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+  <script>
+    // Function to convert audio to text
+    const convertAudioToText = async (audioFile) => {
+      // Add loading state if needed
+      document.getElementById("loading-state").style.display = "block";
+
+      try {
+        console.log("Sending request to /audio-to-text...");
+        // Create FormData and append the audio file
+        const formData = new FormData();
+        formData.append("audio", audioFile);
+
+        // Make a POST request to the audio-to-text route
+        const response = await fetch("/audio-to-text", {
+          method: "POST",
+          body: formData,
+        });
+
+        console.log("Received response:", response);
+
+        if (response.ok) {
+          const result = await response.json();
+
+          console.log("Parsed response JSON:", result);
+
+          // Display the text result
+          const textResultElement = document.getElementById('textResult');
+          textResultElement.textContent = result.textResult;
+          textResultElement.style.display = 'block'; // Show the text result
+
+          // Hide loading state if needed
+          document.getElementById("loading-state").style.display = "none";
+        } else {
+          // Handle errors if necessary
+          console.error("Failed to convert audio to text:", await response.text());
+        }
+      } catch (error) {
+        console.error("An error occurred while converting audio to text:", error);
+        // Hide loading state in case of an error
+        document.getElementById("loading-state").style.display = "none";
+      }
+    };
+
+    // Function to handle form submission
+    const submitAudioForm = async (event) => {
+      event.preventDefault();
+
+      const audioInput = event.target.audioInput;
+      const audioFile = audioInput.files[0];
+
+      if (audioFile) {
+        // Call the convertAudioToText function with the provided audio file
+        await convertAudioToText(audioFile);
+      } else {
+        // Handle if no audio file is selected
+        alert("Please select an audio file.");
+      }
+
+      // Clear the input field
+      audioInput.value = "";
+
+      // Hide loading state if needed
+      document.getElementById("loading-state").style.display = "none";
+    };
+
+    // Attach event listener for audio form submission
+    document.querySelector("form#audio-form").addEventListener("submit", submitAudioForm);
+  </script>
+</body>
+</html>
+

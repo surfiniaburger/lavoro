@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import template from "./template.html";
 import streamingTemplate from "./template-streaming.html";
 import imageTemplate from "./image-template.html";
-import imgGen from "./img-class.html";
+import audioProcessing from "./audio.html";
 import imgClass from "./class-template.html";
 
 const app = new Hono();
@@ -12,7 +12,7 @@ const app = new Hono();
 app.get("/", (c) => c.html(streamingTemplate));
 app.get("/b", (c) => c.html(template));
 app.get("/c", (c) => c.html(imageTemplate));
-app.get("/d", (c) => c.html(imgGen));
+app.get("/d", (c) => c.html(audioProcessing));
 app.get("/e", (c) => c.html(imgClass));
 
 
@@ -247,6 +247,51 @@ app.get('/last-query', async (c) => {
     return c.json({error:"Error fetching the last query."});
   }
 });
+
+// Function to convert audio to text using Cloudflare AI
+async function convertAudioToText(audioBuffer, ai) {
+  const audioInputs = {
+    audio: [...new Uint8Array(audioBuffer)],
+  };
+
+  try {
+  const audioResponse = await ai.run('@cf/openai/whisper', audioInputs);
+  console.log("Model Response:", audioResponse);
+  const textResult = JSON.stringify(audioResponse.text);
+   return textResult;
+} catch (error) {
+  console.error('Error converting audio to text:', error);
+  return { textResult: 'Error converting audio to text' }; // Return an error message
+}
+}
+
+app.post("/audio-to-text", async (c) => {
+  const ai = new Ai(c.env.AI);
+  const database = c.env.DB;
+
+  try {
+    const formData = await c.req.formData();
+    const audioFile = formData.get("audio");
+
+    if (!audioFile) {
+      return c.json({ error: "No audio file uploaded" });
+    }
+
+    const audioBuffer = await audioFile.arrayBuffer();
+
+    // Convert audio to text using Cloudflare AI
+    const textResult = await convertAudioToText(audioBuffer, ai);
+
+    // Use the database to save the AI response
+    await saveResultToDatabase(database, "Audio-to-Text Conversion", textResult);
+
+    return c.json({ textResult });
+  } catch (error) {
+    console.error('Error processing audio file:', error);
+    return c.json({ error: 'Error processing audio file' });
+  }
+});
+
 
 app.onError((err, c) => {
   return c.text(err);
